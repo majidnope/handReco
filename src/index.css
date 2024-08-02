@@ -1,0 +1,23 @@
+.App {
+  text-align: center;
+}
+body{
+  padding: 0;
+  margin: 0;
+}
+
+.videoView {
+  position: relative;
+  width: 100%;
+  height: auto;
+}
+
+.detectOnClick {
+  cursor: pointer;
+}
+
+.canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
