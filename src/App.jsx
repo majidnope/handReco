@@ -1,6 +1,6 @@
 
 import { useEffect, useRef, useState } from 'react';
-import { FilesetResolver, HandLandmarker } from "@mediapipe/tasks-vision"
+import { FilesetResolver, HandLandmarker, GestureRecognizer } from "@mediapipe/tasks-vision"
 import Webcam from 'react-webcam'
 import { drawConnectors, drawLandmarks } from '@mediapipe/drawing_utils';
 import { HAND_CONNECTIONS } from '@mediapipe/hands';
@@ -9,6 +9,7 @@ const App = () => {
   const canvasRef = useRef(null)
   const [lastVideoTime, setLastVideoTime] = useState(-1)
   const [ai, setAi] = useState(null)
+  const [handPos, setPos] = useState("")
   useEffect(() => {
 
     if (videoRef.current.video) {
@@ -17,11 +18,11 @@ const App = () => {
           // path/to/wasm/root
           "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm"
         );
-        const handLandmarker = await HandLandmarker.createFromOptions(
+        const handLandmarker = await GestureRecognizer.createFromOptions(
           vision,
           {
             baseOptions: {
-              modelAssetPath: "/hand_landmarker.task"
+              modelAssetPath: "/gesture_recognizer.task"
             },
             runningMode: "VIDEO",
 
@@ -49,15 +50,17 @@ const App = () => {
         canvas.clearRect(0, 0, canvas.canvas.width, canvas.canvas.height);
         if (video.currentTime !== lastVideoTime) {
           let startTimeMs = performance.now();
-          const detections = await ai.detectForVideo(video, startTimeMs);
+          const detections = await ai.recognizeForVideo(video, startTimeMs);
+          if (detections?.gestures[0]?.length > 0) {
+            setPos(detections?.gestures[0][0]?.displayName + " " + detections?.gestures[0][0]?.categoryName)
+          }
           let cor = detections.landmarks[0]?.map(({ x, y }) => ({ x, y }))
 
-          drawConnectors(canvas, cor, HAND_CONNECTIONS, {
+          drawConnectors(canvas, cor, GestureRecognizer.HAND_CONNECTIONS, {
             color: "#00FF00",
             lineWidth: 5
           })
           drawLandmarks(canvas, cor, { color: "#FF0000", lineWidth: 2 })
-
           setLastVideoTime(video.currentTime)
         }
         canvas.restore();
@@ -76,6 +79,7 @@ const App = () => {
     <>
       <Webcam ref={videoRef} />
       <canvas style={{ position: "absolute", left: 0, right: 0 }} ref={canvasRef}></canvas>
+      <h4>{handPos}</h4>
     </>
   )
 };
